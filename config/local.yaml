@@ -1,0 +1,21 @@
+env: local
+http_server:
+  address: localhost:8080
+  timeout: 4s
+  idle_timeout: 60s
+  write_timeout: 4s
+
+postgres:
+  dsn: postgres://postgres:postgres@localhost:5432/url_shortener?sslmode=disable
+  replica_dsns: []
+  max_open_conns: 10
+  max_idle_conns: 5
+  conn_max_lifetime: 30m
+
+redis:
+  address: localhost:6379
+  password: ""
+  db: 0
+
+cache:
+  url_ttl: 15m

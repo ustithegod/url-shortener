@@ -1,0 +1,69 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: url-shortener-postgres
+    environment:
+      POSTGRES_DB: url_shortener
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d url_shortener"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: url-shortener-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  migrator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: migrator
+    container_name: url-shortener-migrator
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      MIGRATOR_DSN: postgres://postgres:postgres@postgres:5432/url_shortener?sslmode=disable
+    command:
+      - --dsn=postgres://postgres:postgres@postgres:5432/url_shortener?sslmode=disable
+      - --migrations-path=/app/migrations
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: app
+    container_name: url-shortener-app
+    depends_on:
+      migrator:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    environment:
+      URL_SHORTENER_POSTGRES_DSN: postgres://postgres:postgres@postgres:5432/url_shortener?sslmode=disable
+      URL_SHORTENER_REDIS_ADDRESS: redis:6379
+      URL_SHORTENER_HTTP_SERVER_ADDRESS: 0.0.0.0:8082
+    ports:
+      - "8082:8082"
+
+volumes:
+  postgres_data:
+  redis_data:
