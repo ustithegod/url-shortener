@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>URL Shortener</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div id="app" class="page">
+      <div class="backdrop backdrop-a"></div>
+      <div class="backdrop backdrop-b"></div>
+
+      <main class="layout">
+        <section class="hero">
+          <p class="eyebrow">URL Shortener</p>
+          <h1>Короткие ссылки и аналитика на одной странице</h1>
+          <p class="lead">
+            Создай короткий алиас, открой ссылку и сразу посмотри статистику переходов.
+          </p>
+          <div class="api-box">
+            <span>API</span>
+            <input v-model="apiBase" type="text" />
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Создать ссылку</h2>
+            <p>Alias можно не указывать, тогда он сгенерируется автоматически.</p>
+          </div>
+
+          <form class="form" @submit.prevent="createShortUrl">
+            <label>
+              <span>Оригинальный URL</span>
+              <input v-model.trim="form.url" type="url" placeholder="https://example.com/article" required />
+            </label>
+
+            <label>
+              <span>Alias</span>
+              <input v-model.trim="form.alias" type="text" placeholder="my-link" />
+            </label>
+
+            <button class="primary" :disabled="loading.create">
+              {{ loading.create ? 'Создаю...' : 'Создать короткую ссылку' }}
+            </button>
+          </form>
+
+          <div v-if="createError" class="message error">{{ createError }}</div>
+
+          <div v-if="created.alias" class="result-card">
+            <div>
+              <p class="result-label">Готово</p>
+              <strong>{{ created.alias }}</strong>
+            </div>
+            <a :href="created.short_url" target="_blank" rel="noreferrer">{{ created.short_url }}</a>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Аналитика</h2>
+            <p>Можно смотреть сырые события или агрегировать по времени и User-Agent.</p>
+          </div>
+
+          <form class="form analytics-form" @submit.prevent="loadAnalytics">
+            <label>
+              <span>Alias</span>
+              <input v-model.trim="analyticsAlias" type="text" placeholder="my-link" required />
+            </label>
+
+            <label>
+              <span>Группировка</span>
+              <select v-model="groupBy">
+                <option value="raw">raw</option>
+                <option value="day">day</option>
+                <option value="month">month</option>
+                <option value="user_agent">user_agent</option>
+              </select>
+            </label>
+
+            <button class="secondary" :disabled="loading.analytics">
+              {{ loading.analytics ? 'Загружаю...' : 'Показать аналитику' }}
+            </button>
+          </form>
+
+          <div v-if="analyticsError" class="message error">{{ analyticsError }}</div>
+
+          <div v-if="analytics" class="analytics-card">
+            <div class="stats">
+              <div class="stat">
+                <span>Alias</span>
+                <strong>{{ analytics.alias }}</strong>
+              </div>
+              <div class="stat">
+                <span>Переходов</span>
+                <strong>{{ analytics.total_clicks }}</strong>
+              </div>
+              <div class="stat stat-wide">
+                <span>URL</span>
+                <a :href="analytics.url" target="_blank" rel="noreferrer">{{ analytics.url }}</a>
+              </div>
+            </div>
+
+            <div class="table-wrap">
+              <table v-if="analytics.entries.length">
+                <thead>
+                  <tr v-if="groupBy === 'raw'">
+                    <th>User-Agent</th>
+                    <th>Время</th>
+                  </tr>
+                  <tr v-else>
+                    <th>{{ groupBy === 'user_agent' ? 'User-Agent' : 'Период' }}</th>
+                    <th>Количество</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(entry, index) in analytics.entries" :key="index">
+                    <template v-if="groupBy === 'raw'">
+                      <td>{{ entry.user_agent || 'unknown' }}</td>
+                      <td>{{ formatDate(entry.clicked_at) }}</td>
+                    </template>
+                    <template v-else>
+                      <td>{{ entry.bucket }}</td>
+                      <td>{{ entry.count }}</td>
+                    </template>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div v-else class="empty-state">Переходов пока нет.</div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

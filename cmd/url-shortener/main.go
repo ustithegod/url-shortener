@@ -14,6 +14,7 @@ import (
 	"github.com/ustithegod/url-shortener/internal/http-server/handlers/analytics"
 	"github.com/ustithegod/url-shortener/internal/http-server/handlers/redirect"
 	"github.com/ustithegod/url-shortener/internal/http-server/handlers/url/save"
+	"github.com/ustithegod/url-shortener/internal/http-server/middleware/cors"
 	"github.com/ustithegod/url-shortener/internal/storage/postgres"
 )
 
@@ -42,7 +43,7 @@ func main() {
 	store := postgres.New(db, cache, cfg.Cache.URLTTL)
 
 	router := ginext.New(ginMode(cfg.Env))
-	router.Use(ginext.Logger(), ginext.Recovery())
+	router.Use(cors.New(), ginext.Logger(), ginext.Recovery())
 
 	router.POST("/shorten", save.New(zlog.Logger, store))
 	router.GET("/s/:short_url", redirect.New(zlog.Logger, store, store))

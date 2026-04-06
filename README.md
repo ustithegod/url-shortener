@@ -88,13 +88,16 @@ Compose поднимает:
 - `redis`
 - `migrator`
 - `app`
+- `frontend`
 
 Запуск:
 ```bash
 docker compose up --build
 ```
 
-После старта сервис будет доступен на `http://localhost:8080`.
+После старта:
+- фронтенд будет доступен на `http://localhost:8080`
+- API будет доступно на `http://localhost:8082`
 
 ## Структура
 
